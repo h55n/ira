@@ -1,5 +1,86 @@
 // One voice session: browser PCM in, AssemblyAI Realtime STT, agent turns, replies out.
 // Runtime-agnostic: the server entry (Node or Deno) injects sttConnect, which
+// returns a WebSocket-like object with readyState/send/close and event handlers.
+
+export class VoiceSession {
+  constructor(ws, { id, systemPrompt, history, sttConnect, agentTurn, log }) {
+    this.ws = ws;
+    this.id = id;
+    this.systemPrompt = systemPrompt;
+    this.history = history; // shared array of { role, content } for context
+    this.sttConnect = sttConnect;
+    this.agentTurn = agentTurn;
+    this.log = log;
+    this.aai = null;
+    this.open = false;
+    this.sttOpen = false;
+    this.turnCount = 0;
+    this.audioBuf = [];   // queued client audio chunks
+    this.audioBytes = 0;  // queued byte count
+    this.flushTimer = null;
+    // AssemblyAI hard-closes the socket if any single chunk is under 50ms
+    // (1600 bytes at 16kHz PCM16) or over 1000ms. Never forward below the floor.
+    this.MIN_FLUSH = 1600;
+    this.TARGET_FLUSH = 3200; // ~100ms
+  }
+
+  async handleMessage(data, isBinary) {
+    if (!isBinary) {
+      let msg;
+      try { msg = JSON.parse(data.toString()); } catch { return; }
+      if (msg.type === 'text') {
+        // typed chat path (no mic)
+        if (this.sttOpen) return; // a live call is running; typed text ignored
+        await this.takeTurn(msg.text || '');
+      }
+      return;
+    }
+    if (!this.sttOpen) {
+      // first audio frame = call start
+      this.startCall();
+      this.connectSTT();
+    }
+    this.audioBuf.push(data);
+    this.audioBytes += data.byteLength;
+    if (this.audioBytes >= this.TARGET_FLUSH) this.flushAudio();
+    else this.armFlush();
+  }
+
+  armFlush() {
+    if (this.flushTimer) return;
+    this.flushTimer = setTimeout(() => {
+      this.flushTimer = null;
+      this.flushAudio();
+      if (this.audioBytes) this.armFlush(); // still holding a sub-floor tail: keep waiting for more audio
+    }, 100);
+  }
+
+  flushAudio() {
+    if (!this.audioBytes || this.audioBytes < this.MIN_FLUSH) return; // hold - never send <50ms
+    const chunks = this.audioBuf;
+    this.audioBuf = [];
+    this.audioBytes = 0;
+    if (!(this.open && this.aai && this.aai.readyState === 1)) return;
+    const total = chunks.reduce((n, c) => n + c.byteLength, 0);
+    const merged = new Uint8Array(total);
+    let off = 0;
+    for (const c of chunks) { merged.set(new Uint8Array(c.buffer || c, c.byteOffset || 0, c.byteLength), off); off += c.byteLength; }
+    this.aai.send(merged.buffer);
+  }
+
+  startCall() {
+    this.sttOpen = true;
+    this.send({ type: 'call-started' });
+  }
+
+  async connectSTT() {
+    try {
+      this.aai = await this.sttConnect();
+    } catch (err) {
+      this.log('STT connect failed:', err.message);
+      this.send({ type: 'error', message: 'Voice service unavailable. Try typed chat instead.' });
+      return;
+// Runtime-agnostic: the server entry (Node or Deno) injects sttConnect, which
 // returns a WebSocket-like object using property handlers (onopen/onmessage/...).
 import { Agent } from './agent.js';
 
@@ -11,6 +92,13 @@ export class VoiceSession {
     this.agent = new Agent((msg) => this.send({ type: 'agent', ...msg }));
     this.aai = null;
     this.open = false;
+    this.audioBuf = [];   // queued client audio chunks
+    this.audioBytes = 0;  // queued byte count
+    this.flushTimer = null;
+    // AssemblyAI hard-closes the socket if any single chunk is under 50ms
+    // (1600 bytes at 16kHz PCM16) or over 1000ms. Never forward below the floor.
+    this.MIN_FLUSH = 1600;
+    this.TARGET_FLUSH = 3200; // ~100ms
     this.connectSTT(sttConnect);
   }
 
@@ -29,12 +117,13 @@ export class VoiceSession {
       return;
     }
     this.aai.onopen = () => { this.open = true; this.send({ type: 'status', text: 'stt-connected' }); };
+    this.aai.onclose = (ev) => { this.open = false; console.error('AAI_CLOSE', ev?.code, JSON.stringify(ev?.reason || '')); this.send({ type: 'status', text: 'stt-closed: refresh karke phir try karein' }); };
     this.aai.onmessage = (ev) => { const d = typeof ev === 'object' && 'data' in ev ? ev.data : ev; this.onSTT(JSON.parse(typeof d === 'string' ? d : d.toString())); };
-    this.aai.onclose = () => { this.open = false; };
     this.aai.onerror = (e) => this.send({ type: 'status', text: 'stt-error: ' + (e.message || 'ws error') });
   }
 
   onSTT(msg) {
+    if (msg.type !== 'Turn') console.error('AAI_MSG', JSON.stringify(msg).slice(0, 300));
     if (msg.type === 'Turn') {
       const text = msg.transcript || '';
       if (!text.trim()) return;
@@ -45,8 +134,13 @@ export class VoiceSession {
 
   onClientMessage(data, isBinary) {
     if (isBinary) {
-      // 16kHz mono PCM16 from the AudioWorklet
-      if (this.open && this.aai.readyState === 1) this.aai.send(data);
+      // 16kHz mono PCM16 from the AudioWorklet. Browsers may send very small
+      // frames (~3ms); AssemblyAI wants >=50ms chunks, so accumulate to ~100ms
+      // (3200 bytes at 16kHz PCM16) and flush on a timer for the tail.
+      this.audioBuf.push(data);
+      this.audioBytes += data.byteLength;
+      if (this.audioBytes >= this.TARGET_FLUSH) this.flushAudio();
+      else this.armFlush();
       return;
     }
     let msg; try { msg = JSON.parse(data.toString()); } catch { return; }
@@ -54,6 +148,28 @@ export class VoiceSession {
     if (msg.type === 'call-start') this.agent.greet();
   }
 
+  armFlush() {
+    if (this.flushTimer) return;
+    this.flushTimer = setTimeout(() => {
+      this.flushTimer = null;
+      this.flushAudio();
+      if (this.audioBytes) this.armFlush(); // still holding a sub-floor tail: keep waiting for more audio
+    }, 100);
+  }
+
+  flushAudio() {
+    if (!this.audioBytes || this.audioBytes < this.MIN_FLUSH) return; // hold - never send <50ms
+    const chunks = this.audioBuf;
+    this.audioBuf = [];
+    this.audioBytes = 0;
+    if (!(this.open && this.aai && this.aai.readyState === 1)) return;
+    const total = chunks.reduce((n, c) => n + c.byteLength, 0);
+    const merged = new Uint8Array(total);
+    let off = 0;
+    for (const c of chunks) { merged.set(new Uint8Array(c.buffer || c, c.byteOffset || 0, c.byteLength), off); off += c.byteLength; }
+    this.aai.send(merged.buffer);
+  }
+
   send(obj) { if (this.client.readyState === 1) this.client.send(JSON.stringify(obj)); }
-  close() { try { this.aai?.close(); } catch {} }
+  close() { if (this.flushTimer) { clearTimeout(this.flushTimer); this.flushTimer = null; } try { this.aai?.close(); } catch {} }
 }
