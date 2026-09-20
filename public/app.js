@@ -12,6 +12,15 @@ const log = (who, text) => {
   f.scrollTop = f.scrollHeight;
 };
 
+function cuState(cls, state, sub) {
+  const ui = $('callui');
+  ui.className = 'on ' + cls;
+  if (state) $('cu-state').textContent = state;
+  if (sub) $('cu-sub').textContent = sub;
+}
+const cuShow = () => cuState('st-listening', 'Connecting…', 'Ira ko call lag raha hai');
+const cuHide = () => { $('callui').className = ''; };
+
 function openSocket({ greet = false, onOpen } = {}) {
   ws = new WebSocket(WS_URL);
   ws.binaryType = 'arraybuffer';
@@ -22,11 +31,15 @@ function openSocket({ greet = false, onOpen } = {}) {
   ws.onmessage = (e) => {
     const m = JSON.parse(e.data);
     if (m.type === 'transcript') {
-      if (m.final) { $('live').textContent = ''; log('you', m.text); }
-      else $('live').textContent = m.text;
+      if (m.final) { $('live').textContent = ''; $('cu-live').textContent = ''; log('you', m.text); }
+      else { $('live').textContent = m.text; if (talking) $('cu-live').textContent = m.text; }
     }
     if (m.type === 'agent' && m.kind === 'reply') { $('status').textContent = 'Ira'; if (talking) speak(m.text); log('ira', m.text); }
-    if (m.type === 'agent' && m.kind === 'thinking') $('status').textContent = 'Ira soch rahi hai…';
+    if (m.type === 'agent' && m.kind === 'thinking') { $('status').textContent = 'Ira soch rahi hai…'; if (talking) cuState('st-thinking', 'Ira soch rahi hai…', 'ek second'); }
+    if (m.type === 'status' && m.text && m.text.indexOf('stt-closed') === 0 && talking) {
+      stop();
+      $('status').textContent = 'Voice line cut ho gayi - Call dabake phir try karein';
+    }
     if (m.type === 'agent' && m.kind === 'whatsapp') {
       const f = $('feed');
       if (f.dataset.empty) { f.innerHTML = ''; delete f.dataset.empty; }
@@ -43,11 +56,13 @@ function openSocket({ greet = false, onOpen } = {}) {
 }
 
 async function start() {
+  cuShow();
   try { speechSynthesis.cancel(); const w = new SpeechSynthesisUtterance(' '); w.volume = 0; speechSynthesis.speak(w); } catch {}
   try {
     stream = await navigator.mediaDevices.getUserMedia({ audio: { channelCount: 1, echoCancellation: true, noiseSuppression: true } });
   } catch {
     $('status').textContent = 'Mic permission chahiye - ya neeche type karein';
+    cuHide();
     return;
   }
   openSocket({
@@ -63,6 +78,7 @@ async function start() {
       $('mic').querySelector('span').textContent = 'End';
       $('status').textContent = 'Listening - speak Hindi, English, dono chalega';
       talking = true;
+      cuState('st-listening', 'Listening…', 'bolo - Hindi, English, dono chalega');
     },
   });
 }
@@ -70,11 +86,15 @@ async function start() {
 function speak(text) {
   const u = new SpeechSynthesisUtterance(text);
   u.lang = /[\u0900-\u097F]/.test(text) ? 'hi-IN' : 'en-IN';
+  u.onstart = () => { if (talking) cuState('st-speaking', 'Ira bol rahi hai', 'suno - beech mein bolna ho toh bol do'); };
+  u.onend = () => { if (talking) cuState('st-listening', 'Listening…', 'ab aap bolo'); };
   speechSynthesis.speak(u);
 }
 
 function stop() {
   talking = false;
+  cuHide();
+  try { speechSynthesis.cancel(); } catch {}
   stream?.getTracks().forEach(t => t.stop());
   ctx?.close(); ws?.close(); ws = null;
   $('mic').classList.remove('live');
@@ -83,6 +103,7 @@ function stop() {
 }
 
 $('mic').onclick = () => (talking ? stop() : start());
+$('cu-end').onclick = () => stop();
 $('send').onclick = () => {
   const t = $('typed').value.trim();
   if (!t) return;
