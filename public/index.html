@@ -303,20 +303,6 @@ footer a:hover{background:var(--yel)}
   <div class="hand" style="font-size:17px">Style Studio, Pune is a fictional demo line ✎</div>
 </footer>
 
-<script src="https://cdn.jsdelivr.net/npm/aos@2.3.4/dist/aos.js"></script>
-<script src="app.js"></script>
-<script>
-if (window.AOS) {
-  AOS.init({ once: true, offset: 60, easing: 'ease-out-cubic' });
-  setTimeout(() => document.querySelectorAll('[data-aos]:not(.aos-animate)').forEach((el) => { if (el.getBoundingClientRect().top < innerHeight) el.classList.add('aos-animate'); }), 1600);
-} else {
-  document.querySelectorAll('[data-aos]').forEach((el) => el.classList.add('aos-animate'));
-}
-// draw the scribble underline when the headline is in view
-new IntersectionObserver((es, ob) => es.forEach((e) => { if (e.isIntersecting) { e.target.classList.add('drawn'); ob.unobserve(e.target); } }), { threshold: .4 }).observe(document.getElementById('squig'));
-setTimeout(() => document.getElementById('squig').classList.add('drawn'), 2200);
-</script>
-
 <div id="callui" role="dialog" aria-label="Call with Ira">
   <div class="cu-card">
     <span class="tape tl"></span><span class="tape tr"></span>
@@ -333,5 +319,19 @@ setTimeout(() => document.getElementById('squig').classList.add('drawn'), 2200);
     <button class="cu-end" id="cu-end">End Call</button>
   </div>
 </div>
+<script src="https://cdn.jsdelivr.net/npm/aos@2.3.4/dist/aos.js"></script>
+<script src="app.js"></script>
+<script>
+if (window.AOS) {
+  AOS.init({ once: true, offset: 60, easing: 'ease-out-cubic' });
+  setTimeout(() => document.querySelectorAll('[data-aos]:not(.aos-animate)').forEach((el) => { if (el.getBoundingClientRect().top < innerHeight) el.classList.add('aos-animate'); }), 1600);
+} else {
+  document.querySelectorAll('[data-aos]').forEach((el) => el.classList.add('aos-animate'));
+}
+// draw the scribble underline when the headline is in view
+new IntersectionObserver((es, ob) => es.forEach((e) => { if (e.isIntersecting) { e.target.classList.add('drawn'); ob.unobserve(e.target); } }), { threshold: .4 }).observe(document.getElementById('squig'));
+setTimeout(() => document.getElementById('squig').classList.add('drawn'), 2200);
+</script>
+
 </body>
 </html>
