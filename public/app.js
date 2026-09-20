@@ -31,6 +31,11 @@ function openSocket({ greet = false, onOpen } = {}) {
   ws.onmessage = (e) => {
     const m = JSON.parse(e.data);
     if (m.type === 'transcript') {
+      // barge-in: user starts talking while Ira is speaking -> stop her immediately
+      if (!m.final && talking && speechSynthesis.speaking && m.text.trim().length > 1) {
+        speechSynthesis.cancel();
+        cuState('st-listening', 'Listening…', 'ab aap bolo');
+      }
       if (m.final) { $('live').textContent = ''; $('cu-live').textContent = ''; log('you', m.text); }
       else { $('live').textContent = m.text; if (talking) $('cu-live').textContent = m.text; }
     }
