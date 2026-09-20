@@ -43,6 +43,7 @@ function openSocket({ greet = false, onOpen } = {}) {
 }
 
 async function start() {
+  try { speechSynthesis.cancel(); const w = new SpeechSynthesisUtterance(' '); w.volume = 0; speechSynthesis.speak(w); } catch {}
   try {
     stream = await navigator.mediaDevices.getUserMedia({ audio: { channelCount: 1, echoCancellation: true, noiseSuppression: true } });
   } catch {
