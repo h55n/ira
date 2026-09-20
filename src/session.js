@@ -1,19 +1,20 @@
 // One voice session: browser PCM in, AssemblyAI Realtime STT, agent turns, replies out.
-import WebSocket from 'ws';
+// Runtime-agnostic: the server entry (Node or Deno) injects sttConnect, which
+// returns a WebSocket-like object using property handlers (onopen/onmessage/...).
 import { Agent } from './agent.js';
 
 const AAI_WS = 'wss://streaming.assemblyai.com/v3/ws';
 
 export class VoiceSession {
-  constructor(clientWs) {
+  constructor(clientWs, sttConnect) {
     this.client = clientWs;
     this.agent = new Agent((msg) => this.send({ type: 'agent', ...msg }));
     this.aai = null;
     this.open = false;
-    this.connectSTT();
+    this.connectSTT(sttConnect);
   }
 
-  connectSTT() {
+  async connectSTT(sttConnect) {
     const params = new URLSearchParams({
       sample_rate: '16000',
       format_turns: 'true',
@@ -21,13 +22,16 @@ export class VoiceSession {
       min_end_of_turn_silence_when_confident: '400',
       max_turn_silence: '1600',
     });
-    this.aai = new WebSocket(`${AAI_WS}?${params}`, {
-      headers: { Authorization: process.env.ASSEMBLYAI_API_KEY },
-    });
-    this.aai.on('open', () => { this.open = true; this.send({ type: 'status', text: 'stt-connected' }); });
-    this.aai.on('message', (raw) => this.onSTT(JSON.parse(raw.toString())));
-    this.aai.on('close', () => { this.open = false; });
-    this.aai.on('error', (e) => this.send({ type: 'status', text: 'stt-error: ' + e.message }));
+    try {
+      this.aai = await sttConnect(`${AAI_WS}?${params}`);
+    } catch (e) {
+      this.send({ type: 'status', text: 'stt-error: ' + e.message });
+      return;
+    }
+    this.aai.onopen = () => { this.open = true; this.send({ type: 'status', text: 'stt-connected' }); };
+    this.aai.onmessage = (ev) => { const d = typeof ev === 'object' && 'data' in ev ? ev.data : ev; this.onSTT(JSON.parse(typeof d === 'string' ? d : d.toString())); };
+    this.aai.onclose = () => { this.open = false; };
+    this.aai.onerror = (e) => this.send({ type: 'status', text: 'stt-error: ' + (e.message || 'ws error') });
   }
 
   onSTT(msg) {
@@ -42,7 +46,7 @@ export class VoiceSession {
   onClientMessage(data, isBinary) {
     if (isBinary) {
       // 16kHz mono PCM16 from the AudioWorklet
-      if (this.open && this.aai.readyState === WebSocket.OPEN) this.aai.send(data);
+      if (this.open && this.aai.readyState === 1) this.aai.send(data);
       return;
     }
     let msg; try { msg = JSON.parse(data.toString()); } catch { return; }

@@ -9,8 +9,10 @@ function log(entry) {
   let arr = [];
   try { arr = JSON.parse(fs.readFileSync(LOG, 'utf8')); } catch {}
   arr.push({ at: new Date().toISOString(), ...entry });
-  fs.mkdirSync(path.dirname(LOG), { recursive: true });
-  fs.writeFileSync(LOG, JSON.stringify(arr, null, 2));
+  try {
+    fs.mkdirSync(path.dirname(LOG), { recursive: true });
+    fs.writeFileSync(LOG, JSON.stringify(arr, null, 2));
+  } catch {} // read-only fs: demo mode still emits the card to the UI
 }
 
 export async function notifyWhatsApp(booking) {

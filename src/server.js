@@ -2,7 +2,7 @@
 import http from 'node:http';
 import fs from 'node:fs';
 import path from 'node:path';
-import { WebSocketServer } from 'ws';
+import WebSocket, { WebSocketServer } from 'ws';
 import { VoiceSession } from './session.js';
 
 const PORT = process.env.PORT || 3000;
@@ -22,7 +22,8 @@ const server = http.createServer((req, res) => {
 
 const wss = new WebSocketServer({ server, path: '/ws' });
 wss.on('connection', (ws) => {
-  const session = new VoiceSession(ws);
+  const sttConnect = (url) => new WebSocket(url, { headers: { Authorization: process.env.ASSEMBLYAI_API_KEY } });
+  const session = new VoiceSession(ws, sttConnect);
   ws.on('message', (data, isBinary) => session.onClientMessage(data, isBinary));
   ws.on('close', () => session.close());
 });

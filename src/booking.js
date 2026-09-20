@@ -25,8 +25,10 @@ export class Booking {
   }
 
   save() {
-    fs.mkdirSync(path.dirname(STORE), { recursive: true });
-    fs.writeFileSync(STORE, JSON.stringify(this.appointments, null, 2));
+    try {
+      fs.mkdirSync(path.dirname(STORE), { recursive: true });
+      fs.writeFileSync(STORE, JSON.stringify(this.appointments, null, 2));
+    } catch {} // read-only fs (e.g. Deno Deploy): demo keeps in-memory state
   }
 
   tools() {
