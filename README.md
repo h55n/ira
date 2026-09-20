@@ -1,10 +1,11 @@
 # Ira ☎️
 
 <p align="center">
-  <a href="https://github.com/h55n/ira">GitHub</a> | <a href="https://lablab.ai/ai-hackathons/assemblyai-voice-agent-hackathon">AssemblyAI Voice Agent Hackathon</a>
+  <a href="https://github.com/h55n/ira">GitHub</a> | <a href="https://lablab.ai/ai-hackathons/assemblyai-voice-agent-hackathon">AssemblyAI Voice Agent Hackathon</a> | <a href="https://ira.h55n.deno.net">Live Demo</a>
 </p>
 <p align="center">
   <a href="https://github.com/h55n/ira"><img src="https://img.shields.io/badge/Built%20with-AssemblyAI%20Realtime-6C3DF4?style=for-the-badge" alt="Built with AssemblyAI Realtime"></a>
+  <a href="https://ira.h55n.deno.net"><img src="https://img.shields.io/badge/Live%20Demo-ira.h55n.deno.net-0A7EA4?style=for-the-badge" alt="Live Demo"></a>
   <a href="https://nodejs.org"><img src="https://img.shields.io/badge/Runtime-Node.js%2020-339933?style=for-the-badge&logo=node.js&logoColor=white" alt="Node.js 20"></a>
   <a href="https://github.com/h55n/ira"><img src="https://img.shields.io/badge/License-MIT-green?style=for-the-badge" alt="License: MIT"></a>
   <a href="https://github.com/h55n/ira"><img src="https://img.shields.io/badge/Language-Hinglish%20%F0%9F%87%AE%F0%9F%87%B3-orange?style=for-the-badge" alt="Hinglish-first"></a>
