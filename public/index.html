@@ -3,47 +3,256 @@
 <head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Ira - the receptionist that never misses a call</title>
+<meta name="description" content="Ira is a Hinglish-first voice receptionist for Indian salons. She answers every call, books the right slot, and sends the WhatsApp confirmation.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/aos@2.3.4/dist/aos.css">
 <style>
-  :root { --ink:#101418; --mut:#6b7480; --brand:#0f7b6c; }
-  * { margin:0; box-sizing:border-box; font-family:Inter,system-ui,sans-serif; }
-  body { background:#f6f7f8; color:var(--ink); display:grid; place-items:center; min-height:100vh; }
-  .phone { width:min(420px,94vw); background:#fff; border-radius:28px; box-shadow:0 24px 60px rgba(16,20,24,.12); overflow:hidden; }
-  header { padding:22px 24px 14px; }
-  h1 { font-size:20px; letter-spacing:-.02em; }
-  .sub { color:var(--mut); font-size:13px; margin-top:4px; }
-  #status { padding:10px 24px; font-size:12px; color:var(--brand); min-height:34px; }
-  #feed { height:320px; overflow-y:auto; padding:6px 20px 12px; display:flex; flex-direction:column; gap:8px; }
-  .bubble { max-width:82%; padding:9px 13px; border-radius:16px; font-size:14px; line-height:1.4; animation:pop .18s ease-out; }
-  .you { align-self:flex-end; background:#0f7b6c; color:#fff; border-bottom-right-radius:4px; }
-  .ira { align-self:flex-start; background:#eef1f3; border-bottom-left-radius:4px; }
-  #live { padding:0 24px; min-height:20px; font-size:13px; color:var(--mut); font-style:italic; }
-  footer { display:flex; align-items:center; gap:10px; padding:14px 20px 20px; }
-  #typed { flex:1; border:1px solid #e2e6ea; border-radius:999px; padding:10px 14px; font-size:14px; outline:none; }
-  #send, #mic { border:none; cursor:pointer; border-radius:999px; font-size:14px; }
-  #send { background:#eef1f3; padding:10px 16px; }
-  #mic { background:var(--ink); color:#fff; padding:12px 18px; transition:background .2s; }
-  #mic.live { background:#d64545; animation:pulse 1.6s infinite; }
-  .wa { align-self:flex-start; background:#e7f6e9; border:1px solid #bfe5c7; border-bottom-left-radius:4px; white-space:pre-wrap; }
-  .wa-head { font-size:11px; font-weight:600; color:#128c4b; margin-bottom:4px; letter-spacing:.01em; }
-  @keyframes pop { from { transform:translateY(6px); opacity:0; } }
-  @keyframes pulse { 0%,100% { box-shadow:0 0 0 0 rgba(214,69,69,.35);} 50% { box-shadow:0 0 0 10px rgba(214,69,69,0);} }
+:root{
+  --bg:#0a0f0d; --bg2:#0e1512; --card:#121a16; --line:#1f2c26;
+  --ink:#eaf3ef; --mut:#8ea69c; --acc:#1ac99b; --acc2:#7fe7c6; --wa:#25d366;
+  --disp:'Space Grotesk',Inter,system-ui,sans-serif; --body:Inter,system-ui,sans-serif;
+}
+*{margin:0;box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{background:var(--bg);color:var(--ink);font-family:var(--body);overflow-x:hidden}
+::selection{background:var(--acc);color:#06231b}
+
+/* floating orbs */
+.orb{position:fixed;border-radius:50%;filter:blur(90px);opacity:.5;pointer-events:none;z-index:0;will-change:transform}
+.orb.a{width:520px;height:520px;background:radial-gradient(circle,#0f7b6c,transparent 70%);top:-160px;left:-120px;animation:drift1 26s ease-in-out infinite alternate}
+.orb.b{width:420px;height:420px;background:radial-gradient(circle,#123f52,transparent 70%);top:30%;right:-160px;animation:drift2 32s ease-in-out infinite alternate}
+.orb.c{width:380px;height:380px;background:radial-gradient(circle,#274a1f,transparent 70%);bottom:-140px;left:28%;animation:drift1 38s ease-in-out infinite alternate-reverse}
+@keyframes drift1{to{transform:translate(90px,60px) scale(1.12)}}
+@keyframes drift2{to{transform:translate(-70px,-90px) scale(1.08)}}
+
+/* nav */
+nav{position:relative;z-index:5;display:flex;align-items:center;justify-content:space-between;padding:22px clamp(20px,5vw,64px);animation:fall .7s cubic-bezier(.2,.7,.3,1) both}
+.logo{font-family:var(--disp);font-weight:700;font-size:22px;letter-spacing:-.02em;color:var(--ink);text-decoration:none;display:flex;align-items:center;gap:9px}
+.logo .dot{width:10px;height:10px;border-radius:50%;background:var(--acc);animation:blink 2.2s infinite}
+@keyframes blink{0%,100%{box-shadow:0 0 0 0 rgba(26,201,155,.5)}50%{box-shadow:0 0 0 7px rgba(26,201,155,0)}}
+.nav-links{display:flex;gap:26px;align-items:center}
+.nav-links a{color:var(--mut);text-decoration:none;font-size:14px;font-weight:500;transition:color .2s}
+.nav-links a:hover{color:var(--ink)}
+.nav-cta{border:1px solid var(--line);border-radius:999px;padding:8px 16px;color:var(--ink)!important;transition:border-color .2s,transform .2s!important}
+.nav-cta:hover{border-color:var(--acc);transform:translateY(-1px)}
+@media(max-width:640px){.nav-links a:not(.nav-cta){display:none}}
+
+/* hero */
+.hero{position:relative;z-index:2;display:grid;grid-template-columns:1.05fr .95fr;gap:clamp(28px,4vw,60px);align-items:center;max-width:1180px;margin:0 auto;padding:clamp(36px,6vh,72px) clamp(20px,5vw,64px) 40px}
+@media(max-width:900px){.hero{grid-template-columns:1fr}}
+.eyebrow{display:inline-flex;align-items:center;gap:8px;border:1px solid var(--line);background:rgba(18,26,22,.7);color:var(--acc2);font-size:12.5px;font-weight:600;letter-spacing:.04em;padding:7px 14px;border-radius:999px;animation:rise .8s .1s cubic-bezier(.2,.7,.3,1) both}
+.eyebrow .pulse{width:7px;height:7px;border-radius:50%;background:var(--acc);animation:blink 1.8s infinite}
+h1{font-family:var(--disp);font-size:clamp(38px,5.2vw,60px);line-height:1.04;letter-spacing:-.03em;margin:22px 0 18px;animation:rise .8s .22s cubic-bezier(.2,.7,.3,1) both}
+h1 .hl{background:linear-gradient(100deg,var(--acc),var(--acc2));-webkit-background-clip:text;background-clip:text;color:transparent}
+.lede{color:var(--mut);font-size:clamp(15.5px,1.5vw,17.5px);line-height:1.65;max-width:52ch;animation:rise .8s .34s cubic-bezier(.2,.7,.3,1) both}
+.cta-row{display:flex;gap:14px;margin-top:30px;flex-wrap:wrap;animation:rise .8s .46s cubic-bezier(.2,.7,.3,1) both}
+.btn{font-family:var(--disp);font-weight:600;font-size:15px;text-decoration:none;border-radius:999px;padding:14px 26px;transition:transform .22s,box-shadow .22s,background .22s;display:inline-flex;align-items:center;gap:8px}
+.btn.primary{background:linear-gradient(100deg,var(--acc),#0ea884);color:#04241b;box-shadow:0 8px 28px rgba(26,201,155,.25)}
+.btn.primary:hover{transform:translateY(-2px);box-shadow:0 14px 36px rgba(26,201,155,.38)}
+.btn.ghost{border:1px solid var(--line);color:var(--ink)}
+.btn.ghost:hover{transform:translateY(-2px);border-color:var(--acc)}
+.hero-note{margin-top:18px;color:var(--mut);font-size:13px;animation:rise .8s .58s cubic-bezier(.2,.7,.3,1) both}
+.hero-note code{color:var(--acc2);background:rgba(26,201,155,.08);padding:2px 7px;border-radius:6px;font-size:12.5px}
+@keyframes rise{from{opacity:0;transform:translateY(26px)}}
+@keyframes fall{from{opacity:0;transform:translateY(-18px)}}
+
+/* phone demo card */
+.stage{display:flex;justify-content:center;animation:rise .9s .4s cubic-bezier(.2,.7,.3,1) both}
+.phone{position:relative;width:min(400px,94vw);background:linear-gradient(180deg,#131c17,#0f1713);border:1px solid var(--line);border-radius:30px;box-shadow:0 30px 80px rgba(0,0,0,.5),0 0 0 1px rgba(26,201,155,.06);overflow:hidden;animation:floaty 7s ease-in-out infinite}
+@keyframes floaty{0%,100%{transform:translateY(0)}50%{transform:translateY(-9px)}}
+.phone::before{content:'';position:absolute;inset:0;background:radial-gradient(600px 200px at 50% -80px,rgba(26,201,155,.12),transparent);pointer-events:none}
+.p-head{padding:20px 22px 12px;display:flex;align-items:center;gap:12px}
+.avatar{width:42px;height:42px;border-radius:50%;background:linear-gradient(135deg,var(--acc),#0b6e58);display:grid;place-items:center;font-family:var(--disp);font-weight:700;font-size:18px;color:#04241b;flex-shrink:0}
+.p-title{font-family:var(--disp);font-weight:600;font-size:16.5px}
+.p-sub{color:var(--mut);font-size:12px;margin-top:2px}
+.live-pill{margin-left:auto;display:flex;align-items:center;gap:6px;font-size:11px;font-weight:600;color:var(--acc2);border:1px solid rgba(26,201,155,.3);border-radius:999px;padding:4px 10px}
+.live-pill .pulse{width:6px;height:6px;border-radius:50%;background:var(--acc);animation:blink 1.6s infinite}
+#status{padding:8px 22px;font-size:12.5px;color:var(--acc2);min-height:32px;font-style:italic}
+#feed{height:300px;overflow-y:auto;padding:6px 18px 12px;display:flex;flex-direction:column;gap:8px;scrollbar-width:thin;scrollbar-color:var(--line) transparent}
+#feed .empty-hint{color:var(--mut);font-size:13px;text-align:center;margin:auto;line-height:1.6;padding:0 16px}
+#feed .empty-hint code{display:inline-block;color:var(--acc2);background:rgba(26,201,155,.08);padding:2px 8px;border-radius:6px;margin-top:6px;font-size:12.5px}
+.bubble{max-width:84%;padding:9px 13px;border-radius:16px;font-size:13.5px;line-height:1.45;animation:pop .22s cubic-bezier(.2,.9,.3,1.3)}
+.you{align-self:flex-end;background:linear-gradient(120deg,var(--acc),#0ea884);color:#04241b;border-bottom-right-radius:4px;font-weight:500}
+.ira{align-self:flex-start;background:#1b2620;border:1px solid var(--line);border-bottom-left-radius:4px}
+#live{padding:0 22px;min-height:20px;font-size:12.5px;color:var(--mut);font-style:italic}
+.p-foot{display:flex;align-items:center;gap:9px;padding:14px 18px 18px}
+#typed{flex:1;background:#0c1310;border:1px solid var(--line);border-radius:999px;padding:11px 15px;font-size:13.5px;color:var(--ink);outline:none;font-family:var(--body);transition:border-color .2s,box-shadow .2s}
+#typed:focus{border-color:var(--acc);box-shadow:0 0 0 3px rgba(26,201,155,.12)}
+#typed::placeholder{color:#5b6f66}
+#send,#mic{border:none;cursor:pointer;border-radius:999px;font-size:13px;font-weight:600;font-family:var(--body);transition:transform .2s,box-shadow .2s,background .2s}
+#send{background:#1b2620;color:var(--ink);border:1px solid var(--line);padding:11px 16px}
+#send:hover{transform:translateY(-1px);border-color:var(--acc)}
+#mic{background:linear-gradient(120deg,var(--acc),#0ea884);color:#04241b;padding:12px 18px;display:flex;align-items:center;gap:8px}
+#mic:hover{transform:translateY(-1px);box-shadow:0 8px 22px rgba(26,201,155,.3)}
+#mic.live{background:linear-gradient(120deg,#e05656,#c73e3e);color:#fff;animation:pulse 1.6s infinite}
+.wave{display:none;align-items:flex-end;gap:2.5px;height:14px}
+#mic.live .wave{display:flex}
+.wave span{width:3px;background:currentColor;border-radius:2px;animation:wv 1s ease-in-out infinite}
+.wave span:nth-child(1){animation-delay:0s}.wave span:nth-child(2){animation-delay:.15s}.wave span:nth-child(3){animation-delay:.3s}.wave span:nth-child(4){animation-delay:.45s}
+@keyframes wv{0%,100%{height:4px}50%{height:14px}}
+.wa{align-self:flex-start;background:rgba(37,211,102,.08);border:1px solid rgba(37,211,102,.3);border-bottom-left-radius:4px;white-space:pre-wrap}
+.wa-head{font-size:11px;font-weight:600;color:var(--wa);margin-bottom:4px;letter-spacing:.01em}
+@keyframes pop{from{transform:translateY(8px) scale(.96);opacity:0}}
+@keyframes pulse{0%,100%{box-shadow:0 0 0 0 rgba(224,86,86,.4)}50%{box-shadow:0 0 0 11px rgba(224,86,86,0)}}
+
+/* marquee */
+.marquee{position:relative;z-index:2;border-top:1px solid var(--line);border-bottom:1px solid var(--line);background:rgba(14,21,18,.6);overflow:hidden;padding:15px 0;margin:34px 0 0}
+.mq-track{display:flex;gap:44px;width:max-content;animation:mq 26s linear infinite}
+.mq-track span{font-family:var(--disp);font-size:14px;font-weight:500;color:var(--mut);white-space:nowrap;display:flex;align-items:center;gap:44px}
+.mq-track span::after{content:'◆';color:var(--acc);font-size:9px}
+@keyframes mq{to{transform:translateX(-50%)}}
+
+/* sections */
+section{position:relative;z-index:2;max-width:1080px;margin:0 auto;padding:clamp(48px,8vh,84px) clamp(20px,5vw,64px) 0}
+.sec-eyebrow{color:var(--acc);font-size:12.5px;font-weight:600;letter-spacing:.12em;text-transform:uppercase}
+h2{font-family:var(--disp);font-size:clamp(26px,3.4vw,38px);letter-spacing:-.02em;margin:12px 0 8px}
+.sec-sub{color:var(--mut);font-size:15.5px;max-width:60ch;line-height:1.6}
+
+.steps{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-top:32px}
+@media(max-width:820px){.steps{grid-template-columns:1fr}}
+.step{background:var(--card);border:1px solid var(--line);border-radius:20px;padding:24px;transition:transform .3s,border-color .3s,box-shadow .3s}
+.step:hover{transform:translateY(-5px);border-color:rgba(26,201,155,.4);box-shadow:0 18px 40px rgba(0,0,0,.35)}
+.step .num{font-family:var(--disp);font-size:13px;font-weight:700;color:var(--acc);border:1px solid rgba(26,201,155,.35);width:30px;height:30px;border-radius:50%;display:grid;place-items:center;margin-bottom:16px}
+.step h3{font-family:var(--disp);font-size:17.5px;margin-bottom:8px;letter-spacing:-.01em}
+.step p{color:var(--mut);font-size:14px;line-height:1.6}
+.feat-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-top:32px}
+@media(max-width:820px){.feat-grid{grid-template-columns:1fr 1fr}}
+@media(max-width:560px){.feat-grid{grid-template-columns:1fr}}
+.feat{background:var(--card);border:1px solid var(--line);border-radius:18px;padding:20px 22px;transition:transform .3s,border-color .3s}
+.feat:hover{transform:translateY(-4px);border-color:rgba(26,201,155,.4)}
+.feat .ic{font-size:19px;margin-bottom:10px}
+.feat h3{font-family:var(--disp);font-size:15.5px;margin-bottom:6px}
+.feat p{color:var(--mut);font-size:13.5px;line-height:1.55}
+
+/* cta band */
+.band{margin-top:clamp(48px,8vh,84px);border:1px solid var(--line);border-radius:26px;background:linear-gradient(120deg,rgba(26,201,155,.1),rgba(18,63,82,.16));padding:clamp(30px,4vw,48px);text-align:center}
+.band h2{margin-top:0}
+.band p{color:var(--mut);font-size:15px;margin-bottom:24px}
+
+footer{position:relative;z-index:2;border-top:1px solid var(--line);margin-top:clamp(48px,8vh,84px);padding:28px clamp(20px,5vw,64px);display:flex;justify-content:space-between;gap:16px;flex-wrap:wrap;color:var(--mut);font-size:13px}
+footer a{color:var(--acc2);text-decoration:none}
+footer a:hover{text-decoration:underline}
+@media(prefers-reduced-motion:reduce){*,*::before,*::after{animation-duration:.01ms!important;transition-duration:.01ms!important}}
 </style>
 </head>
 <body>
-  <div class="phone">
-    <header>
-      <h1>Ira</h1>
-      <div class="sub">Aapki dukaan ka receptionist - kabhi missed call nahi. Demo line: Style Studio, Pune.</div>
-    </header>
-    <div id="status">Tap the mic to call</div>
-    <div id="feed"></div>
-    <div id="live"></div>
-    <footer>
-      <input id="typed" placeholder="ya yahan type karein…">
-      <button id="send">Send</button>
-      <button id="mic">Call</button>
-    </footer>
+<div class="orb a"></div><div class="orb b"></div><div class="orb c"></div>
+
+<nav>
+  <a class="logo" href="#top"><span class="dot"></span>Ira</a>
+  <div class="nav-links">
+    <a href="#how">How it works</a>
+    <a href="#features">Features</a>
+    <a class="nav-cta" href="https://github.com/h55n/ira" target="_blank" rel="noopener">GitHub ↗</a>
   </div>
+</nav>
+
+<header class="hero" id="top">
+  <div>
+    <span class="eyebrow"><span class="pulse"></span>LIVE · AssemblyAI Realtime</span>
+    <h1>Aapki dukaan ka<br><span class="hl">receptionist.</span></h1>
+    <p class="lede">Ira answers every call in Hinglish, books the right slot for the right service, and sends the WhatsApp confirmation before the customer even puts the phone down. No missed calls, no lost bookings.</p>
+    <div class="cta-row">
+      <a class="btn primary" href="#demo">Talk to Ira live ↓</a>
+      <a class="btn ghost" href="https://github.com/h55n/ira" target="_blank" rel="noopener">View the code</a>
+    </div>
+    <p class="hero-note">Try typing <code>kal 4 baje haircut chahiye</code> - ya mic dabakar baat karein.</p>
+  </div>
+
+  <div class="stage" id="demo">
+    <div class="phone">
+      <div class="p-head">
+        <div class="avatar">इ</div>
+        <div>
+          <div class="p-title">Ira · Style Studio</div>
+          <div class="p-sub">Demo line - salon &amp; grooming, Pune</div>
+        </div>
+        <span class="live-pill"><span class="pulse"></span>LIVE</span>
+      </div>
+      <div id="status">Tap the mic to call, ya neeche type karein</div>
+      <div id="feed" data-empty="1"><div class="empty-hint">Ira yahan jawab degi.<br><code>aaj shaam 6 baje facial available hai?</code></div></div>
+      <div id="live"></div>
+      <div class="p-foot">
+        <input id="typed" placeholder="Type here - Hindi, English, dono chalega…">
+        <button id="send">Send</button>
+        <button id="mic"><span>Call</span><span class="wave"><span></span><span></span><span></span><span></span></span></button>
+      </div>
+    </div>
+  </div>
+</header>
+
+<div class="marquee"><div class="mq-track">
+  <span>Never misses a call</span><span>Speaks Hinglish</span><span>Books the right slot</span><span>WhatsApp confirmations</span><span>Reschedule by phone</span><span>Works 24x7</span>
+  <span>Never misses a call</span><span>Speaks Hinglish</span><span>Books the right slot</span><span>WhatsApp confirmations</span><span>Reschedule by phone</span><span>Works 24x7</span>
+</div></div>
+
+<section id="how">
+  <div data-aos="fade-up" data-aos-duration="700">
+    <div class="sec-eyebrow">How it works</div>
+    <h2>Call aya, booking ho gayi.</h2>
+    <p class="sec-sub">Three things happen in the time it used to take to find a pen.</p>
+  </div>
+  <div class="steps">
+    <div class="step" data-aos="fade-up" data-aos-duration="700"><div class="num">1</div><h3>Customer calls</h3><p>Ira picks up on the first ring - Hindi, English, ya dono mix. She greets them like your best front-desk person would.</p></div>
+    <div class="step" data-aos="fade-up" data-aos-duration="700"><div class="num">2</div><h3>Ira checks the calendar</h3><p>A 60-minute facial blocks both half-hour cells. Ira checks real availability and offers the nearest open slot if their pick is taken.</p></div>
+    <div class="step" data-aos="fade-up" data-aos-duration="700"><div class="num">3</div><h3>Confirmed on WhatsApp</h3><p>Booking ID, date, time - straight to the customer's WhatsApp. Reschedule or cancel later with one call, same number.</p></div>
+  </div>
+</section>
+
+<section id="features">
+  <div data-aos="fade-up" data-aos-duration="700">
+    <div class="sec-eyebrow">Under the hood</div>
+    <h2>Small shop tools, serious engineering.</h2>
+  </div>
+  <div class="feat-grid">
+    <div class="feat" data-aos="fade-up" data-aos-duration="700"><div class="ic">🗓️</div><h3>Duration-aware slots</h3><p>Services block the cells they actually need. No double-booked chairs, ever.</p></div>
+    <div class="feat" data-aos="fade-up" data-aos-duration="700"><div class="ic">🇮🇳</div><h3>Hinglish-first</h3><p>Code-mixed speech in, natural replies out - the way customers really talk.</p></div>
+    <div class="feat" data-aos="fade-up" data-aos-duration="700"><div class="ic">💬</div><h3>WhatsApp confirmations</h3><p>Every booking lands as a WhatsApp message with its ID, date and time.</p></div>
+    <div class="feat" data-aos="fade-up" data-aos-duration="700"><div class="ic">🔁</div><h3>Reschedule &amp; cancel</h3><p>Recognises the caller's number and finds their active booking instantly.</p></div>
+    <div class="feat" data-aos="fade-up" data-aos-duration="700"><div class="ic">⚡</div><h3>Realtime voice</h3><p>Streaming speech-to-text on AssemblyAI Realtime keeps turns fast and natural.</p></div>
+    <div class="feat" data-aos="fade-up" data-aos-duration="700"><div class="ic">🌙</div><h3>Always on</h3><p>After hours, holidays, rush hour - Ira answers when the shop can't.</p></div>
+  </div>
+</section>
+
+<section>
+  <div class="band" data-aos="zoom-in" data-aos-duration="700">
+    <h2>She's on the line right now.</h2>
+    <p>The demo above is live - same number your customers would call.</p>
+    <a class="btn primary" href="#demo">Start talking ↑</a>
+  </div>
+</section>
+
+<footer>
+  <div>Built for the <a href="https://lablab.ai/ai-hackathons/assemblyai-voice-agent-hackathon" target="_blank" rel="noopener">AssemblyAI Voice Agent Hackathon</a> · <a href="https://github.com/h55n/ira" target="_blank" rel="noopener">github.com/h55n/ira</a></div>
+  <div>Style Studio, Pune is a fictional demo line.</div>
+</footer>
+
+<script src="https://cdn.jsdelivr.net/npm/aos@2.3.4/dist/aos.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/vanilla-tilt@1.8.1/dist/vanilla-tilt.min.js"></script>
 <script src="app.js"></script>
+<script>
+// scroll animations via AOS (open-source), tilt via vanilla-tilt
+if (window.AOS) {
+  AOS.init({ once: true, offset: 60, easing: 'ease-out-cubic' });
+  document.querySelectorAll('.step, .feat').forEach((el, i) => el.setAttribute('data-aos-delay', (i % 3) * 90));
+  // fallback: force-show anything already in view if AOS never fires
+  setTimeout(() => document.querySelectorAll('[data-aos]:not(.aos-animate)').forEach((el) => { if (el.getBoundingClientRect().top < innerHeight) el.classList.add('aos-animate'); }), 1600);
+} else {
+  document.querySelectorAll('[data-aos]').forEach((el) => el.classList.add('aos-animate'));
+}
+if (window.VanillaTilt) VanillaTilt.init(document.querySelector('.phone'), { max: 4, speed: 600, scale: 1.01, gyroscope: false });
+// orb parallax
+let raf = 0;
+addEventListener('pointermove', (e) => {
+  if (raf) return;
+  raf = requestAnimationFrame(() => {
+    const x = (e.clientX / innerWidth - .5) * 18, y = (e.clientY / innerHeight - .5) * 14;
+    document.querySelectorAll('.orb').forEach((o, i) => { o.style.translate = `${x * (i + 1) * .5}px ${y * (i + 1) * .5}px`; });
+    raf = 0;
+  });
+}, { passive: true });
+</script>
 </body>
 </html>
