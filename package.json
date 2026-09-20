@@ -1,0 +1,17 @@
+{
+  "name": "ira",
+  "version": "0.1.0",
+  "description": "Missed-call voice receptionist for local businesses - Hindi/Hinglish-first, books appointments, confirms on WhatsApp",
+  "type": "module",
+  "main": "src/server.js",
+  "scripts": {
+    "start": "node src/server.js",
+    "dev": "node --env-file=.env --watch src/server.js"
+  },
+  "dependencies": {
+    "ws": "^8.18.0"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}

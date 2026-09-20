@@ -1,0 +1,19 @@
+# Render blueprint - free tier web service.
+# NOTE: free tier sleeps after ~15 min idle; the demo warms up in ~30s on first hit.
+services:
+  - type: web
+    name: ira-voice
+    runtime: node
+    plan: free
+    buildCommand: npm install
+    startCommand: npm start
+    healthCheckPath: /health
+    envVars:
+      - key: ASSEMBLYAI_API_KEY
+        sync: false
+      - key: LLM_BASE_URL
+        value: https://generativelanguage.googleapis.com/v1beta/openai
+      - key: LLM_API_KEY
+        sync: false
+      - key: LLM_MODEL
+        value: gemini-3.5-flash-lite
