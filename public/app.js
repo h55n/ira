@@ -1,4 +1,5 @@
 let ws, ctx, stream, talking = false;
+let callerLang = null; // STT-reported language of the caller's current call
 const $ = (id) => document.getElementById(id);
 const WS_URL = (location.protocol === 'https:' ? 'wss://' : 'ws://') + location.host + '/ws';
 
@@ -31,6 +32,8 @@ function openSocket({ greet = false, onOpen } = {}) {
   ws.onmessage = (e) => {
     const m = JSON.parse(e.data);
     if (m.type === 'transcript') {
+      // remember the caller's detected language so TTS answers in their register
+      if (m.lang) callerLang = m.lang;
       // barge-in: user starts talking while Ira is speaking -> stop her immediately
       if (!m.final && talking && speechSynthesis.speaking && m.text.trim().length > 1) {
         speechSynthesis.cancel();
@@ -90,7 +93,9 @@ async function start() {
 
 function speak(text) {
   const u = new SpeechSynthesisUtterance(text);
-  u.lang = /[\u0900-\u097F]/.test(text) ? 'hi-IN' : 'en-IN';
+  // Devanagari always sounds Hindi; romanized replies follow the caller's
+  // detected language, so Hinglish callers never get a stiff English voice.
+  u.lang = (/[\u0900-\u097F]/.test(text) || callerLang === 'hi') ? 'hi-IN' : 'en-IN';
   u.onstart = () => { if (talking) cuState('st-speaking', 'Ira bol rahi hai', 'suno - beech mein bolna ho toh bol do'); };
   u.onend = () => { if (talking) cuState('st-listening', 'Listening…', 'ab aap bolo'); };
   speechSynthesis.speak(u);
