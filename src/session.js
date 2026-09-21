@@ -22,12 +22,28 @@ export class VoiceSession {
   }
 
   async connectSTT(sttConnect) {
+    // Salon/booking vocabulary callers actually use, so the STT steers
+    // toward these words instead of generic English lookalikes.
+    const KEYTERMS = JSON.stringify([
+      'salon', 'haircut', 'hair spa', 'facial', 'cleanup', 'threading',
+      'waxing', 'manicure', 'pedicure', 'head massage', 'booking',
+      'appointment', 'slot', 'reschedule', 'cancel', 'kal', 'aaj',
+      'shaam', 'subah', 'bhaiya', 'madam',
+    ]);
     const params = new URLSearchParams({
       sample_rate: '16000',
       format_turns: 'true',
-      end_of_turn_confidence_threshold: '0.7',
-      min_end_of_turn_silence_when_confident: '400',
-      max_turn_silence: '1600',
+      // Hinglish callers: steer per-token across English + Hindi and report
+      // the detected language on every turn (relayed to the UI as `lang`).
+      language_codes: '["en","hi"]',
+      language_detection: 'true',
+      keyterms_prompt: KEYTERMS,
+      // Tuned for phone cadence: callers pause mid-sentence more than the
+      // defaults expect, so require higher confidence and longer silence
+      // before cutting their turn off.
+      end_of_turn_confidence_threshold: '0.8',
+      min_end_of_turn_silence_when_confident: '600',
+      max_turn_silence: '2000',
     });
     try {
       this.aai = await sttConnect(`${AAI_WS}?${params}`);
@@ -46,7 +62,7 @@ export class VoiceSession {
     if (msg.type === 'Turn') {
       const text = msg.transcript || '';
       if (!text.trim()) return;
-      this.send({ type: 'transcript', text, final: msg.end_of_turn });
+      this.send({ type: 'transcript', text, final: msg.end_of_turn, lang: msg.language_code || null });
       if (msg.end_of_turn) this.agent.handleUserTurn(text);
     }
   }
