@@ -380,5 +380,42 @@ form::after{border-radius:28px}
   $('typed').addEventListener('input',function(){$('f').classList.toggle('empty',!$('typed').value.trim())});$('f').classList.add('empty');$('send').addEventListener('click',function(){setTimeout(function(){$('f').classList.toggle('empty',!$('typed').value.trim())},60)});$('typed').addEventListener('keydown',function(e){if(e.key==='Enter')setTimeout(function(){$('f').classList.toggle('empty',!$('typed').value.trim())},60)});
 })();
 </script>
+<style id="motion2">
+:root{--spring2:cubic-bezier(.34,1.56,.64,1)}
+#callui{transform:scale(1.04)}
+#callui.on{transform:none}
+#callui.on .cv{animation:cvin .7s var(--spring2) both}
+@keyframes cvin{from{opacity:0;transform:scale(.55)}to{opacity:1;transform:scale(1)}}
+#callui.on .who{animation:rise .6s var(--ease) .1s both}
+#callui.on .ctl{animation:rise .6s var(--ease) .25s both}
+#cu-state.swap{animation:swap .35s var(--ease) both}
+@keyframes swap{from{opacity:0;transform:translateY(6px);filter:blur(3px)}to{opacity:1;transform:none;filter:none}}
+.cv.listen i{animation:breathe 3.4s ease-in-out infinite}
+@keyframes breathe{0%,100%{transform:scale(1)}50%{transform:scale(1.06)}}
+.cv.think i{animation:morph 2.4s ease-in-out infinite,thinkpulse 1.2s ease-in-out infinite}
+@keyframes thinkpulse{0%,100%{transform:scale(.96)}50%{transform:scale(1.07)}}
+#callui.st-ended .cv{animation:cvout .9s var(--ease) forwards}
+@keyframes cvout{to{opacity:.0;transform:scale(.6);filter:blur(8px)}}
+#callui.st-ended .ctl #cu-end{animation:hang .5s var(--ease) both}
+@keyframes hang{50%{transform:rotate(135deg) scale(.92)}100%{transform:rotate(135deg) scale(.9);opacity:.6}}
+#callui.st-ended #cu-state{color:#8a94a1}
+.ctl button{transition:transform .35s var(--spring2),background .25s,box-shadow .25s}
+.ctl button:hover{transform:translateY(-2px)}
+.ctl button:active{transform:scale(.88)}
+#cu-mute[aria-pressed=true]{animation:mutepop .4s var(--spring2)}
+@keyframes mutepop{0%{transform:scale(.8)}100%{transform:scale(1)}}
+.bubble.you{animation:youin .5s var(--spring2) both;transform-origin:left bottom}
+@keyframes youin{from{opacity:0;transform:translateY(14px) scale(.96)}to{opacity:1;transform:none}}
+.bubble.ira{animation:irain .7s var(--ease) both}
+@keyframes irain{from{opacity:0;transform:translateY(10px);filter:blur(6px)}to{opacity:1;transform:none;filter:none}}
+.bubble.typing{animation:fade .3s ease both}
+#chips button:hover{transform:translateY(-2px)}
+#chips button:active{transform:scale(.94)}
+#send:not(:disabled):hover{transform:scale(1.07)}
+#send:active{transform:scale(.88)}
+html{scroll-behavior:smooth}
+#feed,#f{scroll-behavior:smooth}
+</style>
+<script>(function(){var st=document.getElementById("cu-state");if(!st)return;new MutationObserver(function(){st.classList.remove("swap");void st.offsetWidth;st.classList.add("swap")}).observe(st,{childList:true,characterData:true,subtree:true})})()</script>
 </body>
-  </html>
+</html>
