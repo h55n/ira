@@ -322,6 +322,12 @@ form::after{border-radius:28px}
 #callui .ctl{justify-content:center}
 #callui .who .tm{font-size:14px;color:#6b7684;margin-top:6px}
 #callui.st-listening .cv u{animation:ripple2 2.2s cubic-bezier(.2,.6,.3,1) infinite}
+#callui .ctl #cu-end{width:68px;height:68px;background:#ff5a4d;color:#fff;box-shadow:0 10px 28px rgba(255,90,77,.4)}
+#callui .ctl{gap:28px}
+#callui .ctl #cu-mute{width:58px;height:58px}
+#cu-time{font-variant-numeric:tabular-nums}
+#callui .who .tm#cu-sub{margin-top:2px;font-size:13px}
+.bubble.typing{min-height:60px}
 </style>
 </head>
 <body>
@@ -348,10 +354,10 @@ form::after{border-radius:28px}
   </form>
 </div>
 <div id="callui" role="dialog" aria-label="Call with Ira">
-  <div class="who"><b>Ira</b><span id="cu-state">Connecting...</span><div class="tm" id="cu-sub"></div></div>
+  <div class="who"><b>Ira</b><span id="cu-state">Connecting...</span><div class="tm" id="cu-time">0:00</div><div class="tm" id="cu-sub"></div></div>
   <div class="cv" id="cv"><u></u><u></u><u></u><i></i><s style="--k:0;--m:0.6"></s><s style="--k:1;--m:0.9"></s><s style="--k:2;--m:1"></s><s style="--k:3;--m:0.8"></s><s style="--k:4;--m:0.55"></s></div>
   <div id="cu-live" aria-live="polite"></div>
-  <div class="ctl"><button id="cu-end" aria-label="End call"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path transform="rotate(135 12 12)" d="M22 16.9v3a2 2 0 0 1-2.2 2 19.8 19.8 0 0 1-8.6-3.1 19.5 19.5 0 0 1-6-6A19.8 19.8 0 0 1 2.1 4.2 2 2 0 0 1 4.1 2h3a2 2 0 0 1 2 1.7c.1.9.4 1.8.7 2.7a2 2 0 0 1-.5 2.1L8 9.8a16 16 0 0 0 6 6l1.3-1.3a2 2 0 0 1 2.1-.4c.9.3 1.8.6 2.7.7a2 2 0 0 1 1.7 2z"/></svg></button></div>
+  <div class="ctl"><button id="cu-mute" aria-pressed="false" aria-label="Mute microphone"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="2" width="6" height="12" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v4"/></svg></button><button id="cu-end" aria-label="End call"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path transform="rotate(135 12 12)" d="M22 16.9v3a2 2 0 0 1-2.2 2 19.8 19.8 0 0 1-8.6-3.1 19.5 19.5 0 0 1-6-6A19.8 19.8 0 0 1 2.1 4.2 2 2 0 0 1 4.1 2h3a2 2 0 0 1 2 1.7c.1.9.4 1.8.7 2.7a2 2 0 0 1-.5 2.1L8 9.8a16 16 0 0 0 6 6l1.3-1.3a2 2 0 0 1 2.1-.4c.9.3 1.8.6 2.7.7a2 2 0 0 1 1.7 2z"/></svg></button></div>
 </div>
 </div></div>
 <script src="app.js"></script>
@@ -375,4 +381,4 @@ form::after{border-radius:28px}
 })();
 </script>
 </body>
-</html>
+  </html>
