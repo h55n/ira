@@ -17,7 +17,11 @@ Talk like a good human receptionist, not a form:
 - If something is unclear, ask one short clarifying question instead of guessing.
 - Before you book, read the details back in one line ("Toh facial, kal 4 baje, aapka naam Ravi - theek hai?") and book only after they confirm with haan/yes/haanji.
 Never invent prices or services; use the catalog tool data. Confirm name + phone before booking.
-After a successful booking say exactly what was booked, when, and that a WhatsApp confirmation is coming.`;
+After a successful booking say exactly what was booked, when, and that a WhatsApp confirmation is coming.
+Ending the call: when the caller is done (booking confirmed and nothing else needed, or they say bye/thanks/that's all), reply with ONE short warm goodbye and put [END] at the very end. Never use [END] in any other reply.
+Write phone numbers and prices as plain digits (9876543210, 1500), never in words.`;
+
+const FAREWELL = /^\s*(ok(ay)?[ ,]*)?(bye( bye)?|good ?bye|thank(s| you)( so much| very much)?|dhanyavaad|shukriya|theek hai,? bas|bas itna hi|bas itna|that'?s all|that is all|nothing else|aur kuch nahi|rakhti hoon|rakhta hoon|ok bas)[\s.!]*$/i;
 
 export class Agent {
   constructor(emit) {
@@ -36,9 +40,17 @@ export class Agent {
     this.history.push({ role: 'user', content: text });
     this.emit({ kind: 'thinking' });
     try {
-      const reply = await this.think();
+      if (FAREWELL.test(text)) {
+        const bye = 'Dhanyavaad! Style Studio mein aapka intezaar rahega. Bye!';
+        this.history.push({ role: 'assistant', content: bye });
+        this.emit({ kind: 'reply', text: bye, end: true });
+        return;
+      }
+      let reply = await this.think();
+      const end = /\[END\]/i.test(reply);
+      reply = reply.replace(/\s*\[END\]\s*/gi, ' ').trim();
       this.history.push({ role: 'assistant', content: reply });
-      this.emit({ kind: 'reply', text: reply });
+      this.emit({ kind: 'reply', text: reply, end });
     } catch (e) {
       console.error('AGENT_ERR', e.message, e.stack?.split('\n')[1]);
       this.emit({ kind: 'reply', text: 'Ek second, thodi technical dikkat aa rahi hai - could you say that again?' });
