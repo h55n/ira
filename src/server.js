@@ -10,7 +10,7 @@ const root = path.resolve('public');
 
 const server = http.createServer((req, res) => {
   if (req.url === '/health') { res.writeHead(200, { 'Content-Type': 'application/json' }); res.end('{"ok":true}'); return; }
-  const p = path.join(root, req.url === '/' ? 'index.html' : req.url);
+  const p = path.join(root, req.url === '/' ? 'index.html' : req.url === '/app' ? 'app.html' : req.url);
   if (!p.startsWith(root) || !fs.existsSync(p) || fs.statSync(p).isDirectory()) {
     res.writeHead(404); res.end('not found'); return;
   }

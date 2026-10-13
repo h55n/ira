@@ -37,7 +37,7 @@ Deno.serve(async (req) => {
   }
 
   // static files
-  const rel = url.pathname === '/' ? 'index.html' : url.pathname.slice(1);
+  const rel = url.pathname === '/' ? 'index.html' : url.pathname === '/app' ? 'app.html' : url.pathname.slice(1);
   if (rel.includes('..')) return new Response('not found', { status: 404 });
   try {
     const fileUrl = new URL(rel, root);
