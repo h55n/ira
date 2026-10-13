@@ -1,7 +1,7 @@
 # Ira ☎️
 
 <p align="center">
-  <a href="https://github.com/h55n/ira">GitHub</a> | <a href="https://lablab.ai/ai-hackathons/assemblyai-voice-agent-hackathon">AssemblyAI Voice Agent Hackathon</a> | <a href="https://ira.h55n.deno.net">Live Demo</a>
+  <a href="https://github.com/h55n/ira">GitHub</a> | <a href="https://lablab.ai/ai-hackathons/assemblyai-voice-agent-hackathon">AssemblyAI Voice Agent Hackathon</a> | <a href="https://ira.h55n.deno.net">Website</a> | <a href="https://ira.h55n.deno.net/app">Talk to Ira</a>
 </p>
 <p align="center">
   <a href="https://github.com/h55n/ira"><img src="https://img.shields.io/badge/Built%20with-AssemblyAI%20Realtime-6C3DF4?style=for-the-badge" alt="Built with AssemblyAI Realtime"></a>
@@ -49,7 +49,7 @@ npm install
 npm start               # serves on :3000, PORT env respected
 ```
 
-Open `http://localhost:3000` and tap **Call**. Speak Hindi, English, dono chalega.
+Open `http://localhost:3000` for the landing page, or `http://localhost:3000/app` for the call screen, and tap **Call**. Speak Hindi, English, dono chalega.
 
 ### Environment
 
@@ -68,9 +68,34 @@ Open `http://localhost:3000` and tap **Call**. Speak Hindi, English, dono chaleg
 3. Give a name and 10-digit number - booking lands, WhatsApp card appears in the feed
 4. "Mera number 9876543210 hai, booking cancel karni hai" - she finds it and cancels
 
+## Pages
+
+| Route | What |
+|---|---|
+| `/` | Landing page |
+| `/app` | The call and chat screen |
+| `/ws` | WebSocket bridge to the voice session |
+| `/health` | `{"ok":true}` |
+
+## Project layout
+
+```
+public/index.html   landing page
+public/app.html     call and chat UI
+public/app.js       client: mic capture, socket, playback
+src/agent.js        prompt and tool-calling loop
+src/booking.js      services catalog and slot engine
+src/session.js      voice session (STT, agent, replies)
+src/whatsapp.js     WhatsApp Cloud API confirmations
+server.deno.js      Deno Deploy entry (live site)
+src/server.js       Node entry for local dev and Docker
+```
+
 ## Deploy
 
-Ships with a `Dockerfile` (port 7860) for Hugging Face Spaces and a `render.yaml` blueprint for Render. Secrets are environment variables in both - nothing sensitive lives in this repo.
+The live site runs on Deno Deploy using `server.deno.js` (free, no card, signs in with GitHub). Disk writes are not available there, so bookings reset when the instance restarts. For a persistent store, run the Node entry.
+
+The repo also ships a `Dockerfile` (port 7860, Node entry) and a `render.yaml` blueprint. Secrets are environment variables everywhere - nothing sensitive lives in this repo.
 
 ## License
 
