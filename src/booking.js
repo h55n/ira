@@ -42,10 +42,10 @@ export class Booking {
   }
 
   // A service occupies ceil(mins/30) consecutive half-hour cells.
-  blockedStarts(date) {
+  blockedStarts(date, exclude = null) {
     const busy = [];
     for (const a of this.appointments) {
-      if (a.date !== date || a.status !== 'booked') continue;
+      if (a === exclude || a.date !== date || a.status !== 'booked') continue;
       const s = svc(a.service);
       const start = toMin(a.start);
       for (let i = 0; i < Math.ceil((s?.mins || 30) / 30); i++) busy.push(start + i * 30);
@@ -53,10 +53,10 @@ export class Booking {
     return new Set(busy);
   }
 
-  slotsFor(date, serviceId) {
+  slotsFor(date, serviceId, exclude = null) {
     const s = svc(serviceId);
     if (!s || !date || date < today()) return [];
-    const busy = this.blockedStarts(date);
+    const busy = this.blockedStarts(date, exclude);
     const out = [];
     for (let t = OPEN_HOUR * 60; t + s.mins <= CLOSE_HOUR * 60; t += 30) {
       let fits = true;
@@ -95,7 +95,7 @@ export class Booking {
       const a = this.appointments.find(x => x.phone === phone && x.status === 'booked');
       if (!a) return { ok: false, error: 'no active booking for that number' };
       if (name === 'cancel') { a.status = 'cancelled'; this.save(); return { ok: true, cancelled: a.id }; }
-      if (!this.slotsFor(args.date, a.service).includes(args.start) && !(a.date === args.date && a.start === args.start))
+      if (!this.slotsFor(args.date, a.service, a).includes(args.start) && !(a.date === args.date && a.start === args.start))
         return { ok: false, error: 'that start time is not open - offer get_slots options' };
       a.date = args.date; a.start = args.start;
       this.save();

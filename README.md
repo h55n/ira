@@ -100,3 +100,11 @@ The repo also ships a `Dockerfile` (port 7860, Node entry) and a `render.yaml` b
 ## License
 
 MIT - see below. Built by <a href="https://github.com/h55n">h55n</a> for the AssemblyAI Voice Agent Hackathon.
+
+## Booking engine tests
+
+Run `npm test` (Node 20 or later). The tests use synthetic appointments,
+replace persistence with an in-memory stub, and make no voice, model or
+WhatsApp calls. They cover overlapping reschedules, conflicts with other
+appointments, unchanged bookings after rejection, closing time and cancelled
+appointments. The CI matrix runs on Node 20, 22 and 24.
