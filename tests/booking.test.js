@@ -78,3 +78,26 @@ test('cancelled appointments do not block a reschedule', async () => {
   assert.equal((await booking.call('reschedule', { phone: mine.phone, date, start: '10:30' })).ok, true);
   assert.equal(cancelled.status, 'cancelled');
 });
+
+for (const invalid of ['2099-02-29', '2099-04-31', '2099-13-01', '2099-12-32',
+  '2099-1-1', '2099-12-01extra', 'not-a-date', 20991201, {}, ['2099-12-01']]) {
+  test(`invalid registration date ${JSON.stringify(invalid)} offers no slots`, () => {
+    assert.deepEqual(engine().slotsFor(invalid, 'haircut'), []);
+  });
+}
+
+test('impossible dates cannot be booked or rescheduled', async () => {
+  const booking = engine(appointment('mine', '10:00'));
+  const result = await booking.call('book', {
+    date: '2099-02-29', start: '12:00', service: 'haircut', phone: '9000000002', name: 'Synthetic',
+  });
+  assert.equal(result.ok, false);
+  assert.equal((await booking.call('reschedule', {
+    date: '2099-02-29', start: '12:00', phone: '9000000001',
+  })).ok, false);
+  assert.equal(booking.appointments[0].date, date);
+});
+
+test('a real leap day remains available', () => {
+  assert.equal(engine().slotsFor('2096-02-29', 'haircut').includes('10:00'), true);
+});

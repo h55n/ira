@@ -17,6 +17,11 @@ const normPhone = p => String(p || '').replace(/\D/g, '').slice(-10);
 const toMin = t => { const [h, m] = t.split(':').map(Number); return h * 60 + m; };
 const toTime = mins => `${String(Math.floor(mins / 60)).padStart(2, '0')}:${String(mins % 60).padStart(2, '0')}`;
 const today = () => new Date().toLocaleDateString('en-CA'); // YYYY-MM-DD local
+const validDate = value => {
+  if (typeof value !== 'string' || !/^\d{4}-\d{2}-\d{2}$/.test(value)) return false;
+  const parsed = new Date(`${value}T00:00:00.000Z`);
+  return Number.isFinite(parsed.getTime()) && parsed.toISOString().slice(0, 10) === value;
+};
 
 export class Booking {
   constructor() {
@@ -55,7 +60,7 @@ export class Booking {
 
   slotsFor(date, serviceId, exclude = null) {
     const s = svc(serviceId);
-    if (!s || !date || date < today()) return [];
+    if (!s || !validDate(date) || date < today()) return [];
     const busy = this.blockedStarts(date, exclude);
     const out = [];
     for (let t = OPEN_HOUR * 60; t + s.mins <= CLOSE_HOUR * 60; t += 30) {

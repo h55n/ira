@@ -108,3 +108,6 @@ replace persistence with an in-memory stub, and make no voice, model or
 WhatsApp calls. They cover overlapping reschedules, conflicts with other
 appointments, unchanged bookings after rejection, closing time and cancelled
 appointments. The CI matrix runs on Node 20, 22 and 24.
+The slot engine rejects non-YYYY-MM-DD dates and impossible calendar days
+before offering slots, booking or rescheduling. Tests include leap days and
+invalid input types; rejected reschedules leave the original date intact.
