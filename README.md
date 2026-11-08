@@ -111,3 +111,8 @@ appointments. The CI matrix runs on Node 20, 22 and 24.
 The slot engine rejects non-YYYY-MM-DD dates and impossible calendar days
 before offering slots, booking or rescheduling. Tests include leap days and
 invalid input types; rejected reschedules leave the original date intact.
+
+Same-day availability excludes start times at or before the current minute,
+using the server's local clock consistently with its existing calendar-date
+checks. Future-day availability is unchanged. Booking and rescheduling use
+the same check; tests use an injected clock and never change the system clock.
