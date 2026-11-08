@@ -75,6 +75,16 @@ export class Booking {
     return out;
   }
 
+  activeForPhone(phone) {
+    const now = this.now();
+    const currentDate = today(now);
+    const currentMinute = now.getHours() * 60 + now.getMinutes();
+    return this.appointments.find(a => a.phone === phone && a.status === 'booked' && (
+      a.date > currentDate || (a.date === currentDate &&
+        toMin(a.start) + (svc(a.service)?.mins || 30) > currentMinute)
+    ));
+  }
+
   async call(name, args = {}) {
     if (name === 'catalog') return { ok: true, services: CATALOG };
 
@@ -89,7 +99,7 @@ export class Booking {
       if (!args.name || !svc(args.service)) return { ok: false, error: 'missing name or valid service' };
       if (!this.slotsFor(args.date, args.service).includes(args.start))
         return { ok: false, error: 'that start time is not open - offer get_slots options' };
-      if (this.appointments.some(a => a.phone === phone && a.status === 'booked'))
+      if (this.activeForPhone(phone))
         return { ok: false, error: 'this number already has an active booking - reschedule or cancel it first' };
       const b = { id: 'bk_' + Math.random().toString(36).slice(2, 8), status: 'booked',
                   date: args.date, start: args.start, service: args.service, name: args.name, phone };
@@ -101,7 +111,7 @@ export class Booking {
 
     if (name === 'reschedule' || name === 'cancel') {
       const phone = normPhone(args.phone);
-      const a = this.appointments.find(x => x.phone === phone && x.status === 'booked');
+      const a = this.activeForPhone(phone);
       if (!a) return { ok: false, error: 'no active booking for that number' };
       if (name === 'cancel') { a.status = 'cancelled'; this.save(); return { ok: true, cancelled: a.id }; }
       if (!this.slotsFor(args.date, a.service, a).includes(args.start) && !(a.date === args.date && a.start === args.start))

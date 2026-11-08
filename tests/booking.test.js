@@ -144,3 +144,69 @@ test('booking and rescheduling cannot move an appointment into the past', async 
 test('before opening all otherwise-free same-day slots remain available', () => {
   assert.equal(clockedEngine(9, 0).slotsFor(date, 'haircut')[0], '10:00');
 });
+
+const historicalEngine = (...appointments) => {
+  const booking = new Booking(() => new Date(2099, 11, 2, 11, 0));
+  booking.appointments = appointments;
+  booking.save = () => {};
+  return booking;
+};
+
+test('a completed previous-day booking does not prevent a new booking', async () => {
+  const previous = appointment('mine', '10:00', 'haircut');
+  const booking = historicalEngine(previous);
+  const result = await booking.call('book', {
+    phone: previous.phone, name: 'Synthetic', service: 'haircut', date: '2099-12-02', start: '12:00',
+  });
+  assert.equal(result.ok, true);
+  assert.equal(previous.status, 'booked');
+  assert.equal(previous.date, date);
+  assert.equal(booking.appointments.length, 2);
+});
+
+for (const action of ['cancel', 'reschedule']) {
+  test(`${action} chooses the upcoming appointment instead of historical bookings`, async () => {
+    const previous = appointment('mine', '10:00', 'haircut');
+    const upcoming = { ...previous, id: 'upcoming', date: '2099-12-02', start: '12:00' };
+    const booking = historicalEngine(previous, upcoming);
+    const result = await booking.call(action, {
+      phone: previous.phone, date: '2099-12-02', start: '13:00',
+    });
+    assert.equal(result.ok, true);
+    assert.equal(previous.status, 'booked');
+    assert.equal(previous.date, date);
+    assert.equal(previous.start, '10:00');
+    if (action === 'cancel') assert.equal(upcoming.status, 'cancelled');
+    else assert.equal(upcoming.start, '13:00');
+  });
+}
+
+test('completed same-day services no longer count as an active booking', async () => {
+  const completed = { ...appointment('mine', '10:30', 'haircut'), date: '2099-12-02' };
+  const booking = historicalEngine(completed);
+  const result = await booking.call('book', {
+    phone: completed.phone, name: 'Synthetic', service: 'haircut', date: '2099-12-02', start: '12:00',
+  });
+  assert.equal(result.ok, true);
+  assert.equal(booking.appointments.length, 2);
+});
+
+test('an in-progress service still prevents a second active booking', async () => {
+  const current = { ...appointment('mine', '10:30', 'facial'), date: '2099-12-02' };
+  const booking = historicalEngine(current);
+  assert.equal((await booking.call('book', {
+    phone: current.phone, name: 'Synthetic', service: 'haircut', date: '2099-12-02', start: '12:00',
+  })).ok, false);
+  assert.equal(booking.appointments.length, 1);
+});
+
+test('past booking history alone cannot be cancelled or rescheduled', async () => {
+  const previous = appointment('mine', '10:00', 'haircut');
+  const booking = historicalEngine(previous);
+  assert.equal((await booking.call('cancel', { phone: previous.phone })).ok, false);
+  assert.equal((await booking.call('reschedule', {
+    phone: previous.phone, date: '2099-12-02', start: '12:00',
+  })).ok, false);
+  assert.equal(previous.status, 'booked');
+  assert.equal(previous.date, date);
+});
