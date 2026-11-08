@@ -116,3 +116,8 @@ Same-day availability excludes start times at or before the current minute,
 using the server's local clock consistently with its existing calendar-date
 checks. Future-day availability is unchanged. Booking and rescheduling use
 the same check; tests use an injected clock and never change the system clock.
+
+Completed appointments remain in the stored history but no longer prevent a
+returning customer from booking again. Cancel and reschedule select the
+current or upcoming appointment, not an older visit with the same number.
+An appointment still in progress counts as active until its service ends.
