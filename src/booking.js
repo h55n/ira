@@ -16,7 +16,7 @@ const svc = id => CATALOG.find(s => s.id === id);
 const normPhone = p => String(p || '').replace(/\D/g, '').slice(-10);
 const toMin = t => { const [h, m] = t.split(':').map(Number); return h * 60 + m; };
 const toTime = mins => `${String(Math.floor(mins / 60)).padStart(2, '0')}:${String(mins % 60).padStart(2, '0')}`;
-const today = () => new Date().toLocaleDateString('en-CA'); // YYYY-MM-DD local
+const today = now => now.toLocaleDateString('en-CA'); // YYYY-MM-DD local
 const validDate = value => {
   if (typeof value !== 'string' || !/^\d{4}-\d{2}-\d{2}$/.test(value)) return false;
   const parsed = new Date(`${value}T00:00:00.000Z`);
@@ -24,7 +24,8 @@ const validDate = value => {
 };
 
 export class Booking {
-  constructor() {
+  constructor(now = () => new Date()) {
+    this.now = now;
     this.appointments = [];
     try { this.appointments = JSON.parse(fs.readFileSync(STORE, 'utf8')); } catch {}
   }
@@ -60,10 +61,13 @@ export class Booking {
 
   slotsFor(date, serviceId, exclude = null) {
     const s = svc(serviceId);
-    if (!s || !validDate(date) || date < today()) return [];
+    const now = this.now();
+    const currentDate = today(now);
+    if (!s || !validDate(date) || date < currentDate) return [];
     const busy = this.blockedStarts(date, exclude);
     const out = [];
     for (let t = OPEN_HOUR * 60; t + s.mins <= CLOSE_HOUR * 60; t += 30) {
+      if (date === currentDate && t <= now.getHours() * 60 + now.getMinutes()) continue;
       let fits = true;
       for (let i = 0; i < Math.ceil(s.mins / 30); i++) if (busy.has(t + i * 30)) { fits = false; break; }
       if (fits) out.push(toTime(t));

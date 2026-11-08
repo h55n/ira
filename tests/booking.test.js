@@ -101,3 +101,46 @@ test('impossible dates cannot be booked or rescheduled', async () => {
 test('a real leap day remains available', () => {
   assert.equal(engine().slotsFor('2096-02-29', 'haircut').includes('10:00'), true);
 });
+
+const clockedEngine = (hour, minute, ...appointments) => {
+  const booking = new Booking(() => new Date(2099, 11, 1, hour, minute));
+  booking.appointments = appointments;
+  booking.save = () => {};
+  return booking;
+};
+
+test('same-day slots omit starts that have already passed', () => {
+  const booking = clockedEngine(10, 15);
+  const slots = booking.slotsFor(date, 'haircut');
+  assert.equal(slots.includes('10:00'), false);
+  assert.equal(slots[0], '10:30');
+  assert.equal(booking.slotsFor('2099-12-02', 'haircut')[0], '10:00');
+});
+
+test('a slot at the current minute is no longer offered', () => {
+  assert.equal(clockedEngine(10, 30).slotsFor(date, 'haircut')[0], '11:00');
+});
+
+test('after closing there are no same-day slots', () => {
+  assert.deepEqual(clockedEngine(20, 0).slotsFor(date, 'consult'), []);
+});
+
+test('booking and rescheduling cannot move an appointment into the past', async () => {
+  const mine = appointment('mine', '12:00', 'haircut');
+  const booking = clockedEngine(11, 0, mine);
+  let saves = 0;
+  booking.save = () => { saves++; };
+  assert.equal((await booking.call('book', {
+    date, start: '10:30', service: 'haircut', phone: '9000000002', name: 'Synthetic',
+  })).ok, false);
+  assert.equal((await booking.call('reschedule', {
+    date, start: '10:30', phone: mine.phone,
+  })).ok, false);
+  assert.equal(mine.start, '12:00');
+  assert.equal(booking.appointments.length, 1);
+  assert.equal(saves, 0);
+});
+
+test('before opening all otherwise-free same-day slots remain available', () => {
+  assert.equal(clockedEngine(9, 0).slotsFor(date, 'haircut')[0], '10:00');
+});
